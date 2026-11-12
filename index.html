@@ -3,36 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mengarahkan ke Aplikasi...</title>
+    <!-- Ganti judul sesuai nama aplikasi Anda -->
+    <title>Log Book Induction Hardening</title>
     
-    <!-- Redirect via Meta Refresh (otomatis pindah dalam 0 detik) -->
-    <meta http-equiv="refresh" content="0; url=URL_APPS_SCRIPT_ANDA">
-
+    <!-- Opsional: Deskripsi saat link dibagikan di WhatsApp/Media Sosial -->
+    <meta name="description" content="Deskripsi singkat mengenai aplikasi web Anda.">
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
+        /* Menghilangkan margin bawaan dan scroll ganda */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #ffffff;
         }
-        .btn {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
+
+        /* Membuat iframe tampil 100% layar penuh */
+        iframe {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            z-index: 999999;
         }
     </style>
 </head>
 <body>
-    <h2>Sedang mengalihkan ke aplikasi...</h2>
-    <p>Jika halaman tidak terbuka secara otomatis, silakan klik tombol di bawah:</p>
-    <a href="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec" class="btn">Buka Aplikasi</a>
 
-    <!-- Cadangan redirect via JavaScript -->
-    <script>
-        window.location.replace("https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec");
-    </script>
+    <!-- Ganti atribut src dengan URL Web App Google Apps Script (/exec) Anda -->
+    <iframe 
+        src="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec" 
+        allow="geolocation; microphone; camera; midi; encrypted-media;"
+        allowfullscreen>
+    </iframe>
+
 </body>
 </html>
