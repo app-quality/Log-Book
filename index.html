@@ -1,242 +1,38 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portal Aplikasi Web - Google Apps Script</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons CDN -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    /* Styling scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    .dark ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .dark ::-webkit-scrollbar-thumb {
-      background: #334155;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mengarahkan ke Aplikasi...</title>
     
-    /* Animasi pulse halus saat loading */
-    @keyframes subtlePulse {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 0.5; }
-    }
-    .animate-subtle {
-      animation: subtlePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-  </style>
+    <!-- Redirect via Meta Refresh (otomatis pindah dalam 0 detik) -->
+    <meta http-equiv="refresh" content="0; url=URL_APPS_SCRIPT_ANDA">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
+<body>
+    <h2>Sedang mengalihkan ke aplikasi...</h2>
+    <p>Jika halaman tidak terbuka secara otomatis, silakan klik tombol di bawah:</p>
+    <a href="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec" class="btn">Buka Aplikasi</a>
 
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
-
-  <!-- Navbar / Header -->
-  <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      
-      <!-- Brand & Status -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-          <i class="ph-bold ph-app-window text-xl"></i>
-        </div>
-        <div>
-          <h1 class="text-base font-semibold leading-tight text-slate-900 dark:text-white flex items-center gap-2">
-            Apps Script Viewer
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
-              Aktif
-            </span>
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs sm:max-w-md">
-            Hosted via GitHub Pages
-          </p>
-        </div>
-      </div>
-
-      <!-- Action Toolbar -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Reload Iframe Button -->
-        <button 
-          id="refreshBtn" 
-          title="Muat Ulang Aplikasi"
-          class="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 flex items-center gap-1.5 text-sm">
-          <i class="ph ph-arrows-clockwise text-lg"></i>
-          <span class="hidden sm:inline">Refresh</span>
-        </button>
-
-        <!-- Toggle Fullscreen Button -->
-        <button 
-          id="fullscreenBtn" 
-          title="Layar Penuh"
-          class="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 flex items-center gap-1.5 text-sm">
-          <i class="ph ph-corners-out text-lg" id="fsIcon"></i>
-          <span class="hidden sm:inline">Full Screen</span>
-        </button>
-
-        <!-- Open External Link Button -->
-        <a 
-          id="externalLink" 
-          href="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-sm transition-all focus:ring-2 focus:ring-blue-500/20">
-          <i class="ph-bold ph-arrow-square-out text-base"></i>
-          <span>Buka Langsung</span>
-        </a>
-
-        <!-- Dark Mode Toggle Button -->
-        <button 
-          id="themeToggle" 
-          aria-label="Toggle theme"
-          class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors ml-1">
-          <i class="ph ph-moon text-lg dark:hidden"></i>
-          <i class="ph ph-sun text-lg hidden dark:block text-amber-400"></i>
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- Notification Banner / Tips -->
-  <div id="noticeBanner" class="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200/80 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-xs py-2 px-4">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <i class="ph-fill ph-info text-amber-600 dark:text-amber-400 text-base flex-shrink-0"></i>
-        <span>
-          Jika aplikasi menampilkan halaman kosong atau pesan error izin akses, pastikan Anda telah login ke akun Google yang berwenang atau klik tombol <strong>"Buka Langsung"</strong> di kanan atas.
-        </span>
-      </div>
-      <button onclick="document.getElementById('noticeBanner').style.display='none'" class="text-amber-600 dark:text-amber-400 hover:text-amber-800 font-bold p-1">
-        <i class="ph ph-x"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Main Iframe Container -->
-  <main class="flex-1 flex flex-col relative w-full h-[calc(100vh-4rem)] p-2 sm:p-4 bg-slate-100 dark:bg-slate-950">
-    <div id="frameWrapper" class="flex-1 w-full relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-      
-      <!-- Loading Overlay -->
-      <div id="loadingIndicator" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm transition-opacity duration-300">
-        <div class="w-12 h-12 rounded-full border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-500 animate-spin"></div>
-        <p class="mt-4 font-medium text-slate-700 dark:text-slate-300 animate-subtle text-sm">
-          Menghubungkan ke Google Apps Script...
-        </p>
-        <span class="text-xs text-slate-400 dark:text-slate-500 mt-1">Harap tunggu sebentar</span>
-      </div>
-
-      <!-- Google Apps Script Iframe -->
-      <iframe 
-        id="appScriptFrame"
-        src="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec"
-        title="Google Apps Script App"
-        class="w-full h-full border-0 flex-1"
-        allow="accelerometer; autoplay; camera; encrypted-media; geolocation; gyroscope; microphone; clipboard-write; clipboard-read"
-        sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
-        loading="lazy">
-      </iframe>
-
-    </div>
-  </main>
-
-  <!-- Script Interaksi -->
-  <script>
-    // Penanganan Loading State Iframe
-    const frame = document.getElementById('appScriptFrame');
-    const loader = document.getElementById('loadingIndicator');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const fsIcon = document.getElementById('fsIcon');
-    const frameWrapper = document.getElementById('frameWrapper');
-    const themeToggle = document.getElementById('themeToggle');
-
-    // Menghilangkan loader saat iframe selesai dimuat
-    frame.addEventListener('load', () => {
-      setTimeout(() => {
-        loader.classList.add('opacity-0', 'pointer-events-none');
-      }, 500);
-    });
-
-    // Fitur Refresh Frame
-    refreshBtn.addEventListener('click', () => {
-      loader.classList.remove('opacity-0', 'pointer-events-none');
-      // Force reload iframe
-      const currentSrc = frame.src;
-      frame.src = '';
-      setTimeout(() => {
-        frame.src = currentSrc;
-      }, 100);
-    });
-
-    // Fitur Layar Penuh (Fullscreen)
-    fullscreenBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        frameWrapper.requestFullscreen().catch(err => {
-          console.error(`Gagal mengaktifkan mode fullscreen: ${err.message}`);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    });
-
-    document.addEventListener('fullscreenchange', () => {
-      if (document.fullscreenElement) {
-        fsIcon.classList.replace('ph-corners-out', 'ph-corners-in');
-        frameWrapper.classList.remove('rounded-xl', 'border');
-      } else {
-        fsIcon.classList.replace('ph-corners-in', 'ph-corners-out');
-        frameWrapper.classList.add('rounded-xl', 'border');
-      }
-    });
-
-    // Manajemen Dark Mode
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-
-    themeToggle.addEventListener('click', () => {
-      if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      }
-    });
-  </script>
+    <!-- Cadangan redirect via JavaScript -->
+    <script>
+        window.location.replace("https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec");
+    </script>
 </body>
 </html>
