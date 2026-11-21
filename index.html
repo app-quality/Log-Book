@@ -1,57 +1,1076 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Judul & Deskripsi Standar -->
-    <title>e-Logbook IH</title>
-    <meta name="description" content="Digital Logbook IH Process">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Book Induction Hardening — macOS UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- Tag Open Graph (Wajib agar muncul di WhatsApp) -->
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="e-Logbook IH">
-    <meta property="og:title" content="e-Logbook IH">
-    <meta property="og:description" content="Digital Logbook IH Process">
-    
-    <!-- Opsional: Hapus tanda komentar di bawah ini jika ingin menampilkan ikon/logo di pratinjau WhatsApp -->
-    <!-- <meta property="og:image" content="https://link-gambar-anda.com"> -->
-    
-    <style>
-        /* Menghilangkan margin bawaan dan scroll ganda */
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: #ffffff;
-        }
-
-        /* Membuat iframe tampil 100% layar penuh */
-        iframe {
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            z-index: 999999;
-        }
-    </style>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: {
+          sans: ['-apple-system','BlinkMacSystemFont','"SF Pro Text"','"SF Pro Display"','Inter','sans-serif'],
+          mono: ['"SF Mono"','Menlo','Monaco','Consolas','monospace'],
+        },
+        colors: { mac: {
+          bg:'#f5f5f7', card:'#ffffff', border:'#e5e5ea', blue:'#007aff', blueHover:'#0066d6',
+          green:'#34c759', orange:'#ff9500', red:'#ff3b30', text:'#1d1d1f', subtext:'#86868b'
+        } }
+      } }
+    }
+  </script>
+  <style>
+    body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",sans-serif; background-color:#ececec; color:#1d1d1f; -webkit-font-smoothing:antialiased; }
+    .mac-wallpaper { background:linear-gradient(135deg,#d8e2dc 0%,#e2ece9 35%,#cddafd 70%,#dfe7fd 100%); }
+    .mac-titlebar { background:rgba(246,246,246,.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .mac-segmented { background:rgba(118,118,128,.12); padding:2px; border-radius:8px; }
+    .mac-segmented-btn { border-radius:6px; transition:all .2s cubic-bezier(.25,.8,.25,1); }
+    .mac-segmented-btn.active { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 1px rgba(0,0,0,.06); color:#1d1d1f; font-weight:600; }
+    .mac-input { background-color:#fff; border:1px solid #d1d1d6; border-radius:8px; transition:border-color .15s ease, box-shadow .15s ease; }
+    .mac-input:focus { outline:none; border-color:#007aff; box-shadow:0 0 0 3px rgba(0,122,255,.25); }
+    @media print {
+      body * { visibility:hidden; }
+      #printArea, #printArea * { visibility:visible; }
+      #printArea { position:absolute; left:0; top:0; width:100%; }
+      .no-print { display:none !important; }
+    }
+    ::-webkit-scrollbar { width:7px; height:7px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(0,0,0,.2); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,.35); }
+  </style>
 </head>
-<body>
+<body class="mac-wallpaper min-h-screen flex flex-col">
 
-    <iframe 
-        src="https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec" 
-        allow="geolocation; microphone; camera; midi; encrypted-media;"
-        allowfullscreen>
-    </iframe>
+  <!-- TOAST -->
+  <div id="toast" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-y-[-150%] opacity-0 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl bg-white/90 backdrop-blur-xl border border-black/10 text-mac-text max-w-sm">
+    <div id="toastIcon" class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shrink-0"></div>
+    <div>
+      <p class="text-[11px] font-semibold text-mac-subtext uppercase tracking-wider">Log Book System</p>
+      <div id="toastMsg" class="text-xs font-medium text-mac-text"></div>
+    </div>
+  </div>
 
+  <!-- LOGIN -->
+  <section id="loginView" class="flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-[360px] bg-white/85 backdrop-blur-2xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/60 overflow-hidden">
+      <div class="px-4 py-3 flex items-center gap-2 border-b border-black/5">
+        <span class="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+        <span class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+      </div>
+      <div class="p-7 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-[16px] bg-gradient-to-b from-[#007aff] to-[#0051d5] text-white flex items-center justify-center shadow-lg shadow-blue-500/30 text-2xl">
+          <i class="fa-solid fa-fire-flame-curved"></i>
+        </div>
+        <h1 class="text-lg font-bold text-mac-text tracking-tight">PT. Adhi Chandra Jaya</h1>
+        <p class="text-xs text-mac-subtext mt-0.5 mb-2">Log Book Induction Hardening</p>
+        <p id="modeBadge" class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-4"></p>
+
+        <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-3 text-left">
+          <input type="text" id="loginUsername" required class="w-full px-3.5 py-2.5 mac-input text-sm font-medium placeholder:text-gray-400" placeholder="Account Name" autocomplete="username">
+          <input type="password" id="loginPassword" required class="w-full px-3.5 py-2.5 mac-input text-sm font-medium placeholder:text-gray-400" placeholder="Password" autocomplete="current-password">
+          <div class="pt-2">
+            <button type="submit" id="btnLogin" class="w-full py-2.5 px-4 bg-mac-blue hover:bg-mac-blueHover active:scale-[0.99] text-white font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-2 text-sm">
+              <span>Sign In</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <div id="appView" class="hidden flex-1 flex flex-col sm:p-4 lg:p-6">
+    <div class="flex-1 max-w-7xl w-full mx-auto bg-mac-bg sm:rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.14)] border border-black/10 flex flex-col overflow-hidden">
+
+      <header class="mac-titlebar border-b border-black/10 sticky top-0 z-30 px-4 py-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-4">
+            <div class="hidden sm:flex items-center gap-2">
+              <button onclick="handleLogout()" title="Close Session" class="w-3 h-3 rounded-full bg-[#ff5f56] hover:brightness-90 border border-[#e0443e] transition"></button>
+              <span class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-gradient-to-b from-[#007aff] to-[#0055d4] text-white flex items-center justify-center text-xs"><i class="fa-solid fa-fire"></i></div>
+              <div>
+                <h1 class="text-xs sm:text-sm font-bold text-mac-text leading-none">Induction Hardening</h1>
+                <span class="text-[10px] text-mac-subtext font-medium block mt-0.5">PT. Adhi Chandra Jaya</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mac-segmented flex items-center order-3 sm:order-2 w-full sm:w-auto justify-between sm:justify-center">
+            <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="mac-segmented-btn active flex-1 sm:flex-initial px-3.5 py-1.5 text-xs font-medium text-mac-subtext flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-[11px]"></i> Overview</button>
+            <button onclick="switchTab('form')" id="tabBtn-form" class="mac-segmented-btn flex-1 sm:flex-initial px-3.5 py-1.5 text-xs font-medium text-mac-subtext flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus-circle text-[11px]"></i> New Entry</button>
+            <button onclick="switchTab('register')" id="tabBtn-register" class="mac-segmented-btn flex-1 sm:flex-initial px-3.5 py-1.5 text-xs font-medium text-mac-subtext flex items-center justify-center gap-1.5"><i class="fa-solid fa-table text-[11px]"></i> Register</button>
+          </div>
+
+          <div class="flex items-center gap-2.5 order-2 sm:order-3">
+            <div class="flex items-center gap-2 bg-black/5 px-2.5 py-1 rounded-full">
+              <div class="w-5 h-5 rounded-full bg-mac-blue text-white text-[10px] font-bold flex items-center justify-center"><i class="fa-solid fa-user"></i></div>
+              <span id="navUserName" class="text-xs font-semibold text-mac-text">User</span>
+              <span id="navUserRole" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white text-mac-subtext">Admin</span>
+            </div>
+            <button onclick="handleLogout()" title="Sign Out" class="w-7 h-7 rounded-lg hover:bg-black/5 text-mac-subtext hover:text-mac-red flex items-center justify-center transition"><i class="fa-solid fa-arrow-right-from-bracket text-xs"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-5">
+
+        <!-- DASHBOARD -->
+        <section id="panelDashboard" class="space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-mac-subtext">Total Produksi</p>
+                <h3 id="statTotalProd" class="text-2xl sm:text-3xl font-bold text-mac-text tracking-tight mt-1">0</h3>
+                <span class="text-[11px] text-mac-subtext">Pieces keseluruhan</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-blue-50 text-mac-blue flex items-center justify-center text-lg"><i class="fa-solid fa-cubes"></i></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-mac-subtext">Part OK</p>
+                <h3 id="statPartOk" class="text-2xl sm:text-3xl font-bold text-[#28a745] tracking-tight mt-1">0</h3>
+                <span class="text-[11px] text-mac-subtext">Lolos inspeksi</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-emerald-50 text-mac-green flex items-center justify-center text-lg"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-mac-subtext">Check Lab</p>
+                <h3 id="statPartLab" class="text-2xl sm:text-3xl font-bold text-mac-orange tracking-tight mt-1">0</h3>
+                <span class="text-[11px] text-mac-subtext">Sampel pengujian</span>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-orange-50 text-mac-orange flex items-center justify-center text-lg"><i class="fa-solid fa-flask"></i></div>
+            </div>
+          </div>
+
+          <div class="bg-white px-4 py-3 rounded-2xl border border-black/5 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+            <div class="flex items-center gap-2 text-xs font-semibold text-mac-text"><i class="fa-solid fa-sliders text-mac-blue"></i><span>Filter Visualisasi Data</span></div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="filterDashTahun" onchange="renderCharts()" class="text-xs font-medium py-1.5 px-3 mac-input"><option value="ALL">Semua Tahun</option></select>
+              <select id="filterDashBulan" onchange="renderCharts()" class="text-xs font-medium py-1.5 px-3 mac-input">
+                <option value="ALL">Semua Bulan</option>
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option>
+                <option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Agustus</option>
+                <option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+              </select>
+              <select id="filterDashDiameter" onchange="renderCharts()" class="text-xs font-medium py-1.5 px-3 mac-input"><option value="ALL">Semua Diameter</option></select>
+              <button onclick="refreshData()" id="btnSyncData" class="px-3 py-1.5 rounded-lg bg-mac-blue/10 hover:bg-mac-blue/20 text-mac-blue text-xs font-semibold transition flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate" id="iconSync"></i> Sync</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex flex-col">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-mac-text">Pareto Produksi per Part No</h3>
+                  <p class="text-xs text-mac-subtext">Kuantitas output dan kurva kumulatif (%)</p>
+                </div>
+                <span class="text-[11px] font-semibold px-2.5 py-1 bg-blue-50 text-mac-blue rounded-full">Pareto</span>
+              </div>
+              <div class="flex-1 min-h-[300px] relative"><canvas id="paretoChart"></canvas></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex flex-col">
+              <div class="mb-4">
+                <h3 class="text-sm font-bold text-mac-text">Distribusi Diameter</h3>
+                <p class="text-xs text-mac-subtext">Proporsi output berdasarkan ukuran diameter</p>
+              </div>
+              <div class="flex-1 min-h-[300px] flex items-center justify-center relative"><canvas id="pieChart"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FORM -->
+        <section id="panelForm" class="hidden max-w-3xl mx-auto">
+          <div class="flex items-center justify-between mb-4 px-1">
+            <div>
+              <h2 id="formTitle" class="text-base font-bold text-mac-text">Input Log Produksi Baru</h2>
+              <p class="text-xs text-mac-subtext">Lengkapi parameter proses cutting & induction hardening</p>
+            </div>
+            <button type="button" id="btnCancelEdit" onclick="cancelEditMode()" class="hidden text-xs bg-black/5 hover:bg-black/10 px-3 py-1.5 rounded-lg text-mac-text font-semibold transition">Batal Edit</button>
+          </div>
+
+          <form id="productionForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+            <input type="hidden" id="editRecordId" value="">
+            <input type="hidden" id="editLotNumber" value="">
+
+            <div>
+              <h4 class="text-[11px] font-semibold uppercase text-mac-subtext tracking-wider px-3 mb-1.5">1. Identitas Material & Cutting</h4>
+              <div class="bg-white rounded-2xl border border-black/5 shadow-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Tanggal Produksi Cutting <span class="text-mac-red">*</span></label>
+                  <input type="date" id="inputCuttingDate" required class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                </div>
+                <div>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-xs font-semibold text-mac-text">Diameter <span class="text-mac-red">*</span></label>
+                    <button type="button" onclick="promptAddMaster('DIAMETER')" class="text-[11px] font-semibold text-mac-blue hover:underline">+ Tambah Manual</button>
+                  </div>
+                  <select id="inputDiameter" required class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Part No <span class="text-mac-red">*</span></label>
+                  <input type="text" id="inputPartNo" list="partNoList" required placeholder="Pilih atau ketik Part No" class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                  <datalist id="partNoList"></datalist>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">No. Invoice <span class="text-mac-red">*</span></label>
+                  <input type="text" id="inputInvoiceNo" required placeholder="Contoh: INV-2026-001" class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">No. Bundle <span class="text-mac-red">*</span></label>
+                  <input type="number" id="inputBundleNo" required min="1" placeholder="Contoh: 12" class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                </div>
+                <div class="bg-[#f5f5f7] p-3 rounded-xl flex flex-col justify-center">
+                  <span class="text-[10px] font-semibold text-mac-subtext uppercase">Lot Produksi Harden (Otomatis)</span>
+                  <div id="lotPreview" class="text-xs font-mono font-bold text-mac-blue truncate mt-0.5">HKHP1/[Bulan]/[YY]/[Urut]</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-[11px] font-semibold uppercase text-mac-subtext tracking-wider px-3 mb-1.5">2. Proses Induction Harden</h4>
+              <div class="bg-white rounded-2xl border border-black/5 shadow-sm p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Tanggal Proses Harden <span class="text-mac-red">*</span></label>
+                  <input type="date" id="inputHardenDate" required onchange="updateLotPreview()" class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                </div>
+                <div>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-xs font-semibold text-mac-text">Nama Operator <span class="text-mac-red">*</span></label>
+                    <button type="button" onclick="promptAddMaster('OPERATOR')" class="text-[11px] font-semibold text-mac-blue hover:underline">+ Tambah Manual</button>
+                  </div>
+                  <select id="inputOperator" required class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Shift <span class="text-mac-red">*</span></label>
+                  <select id="inputShift" required class="w-full text-sm font-medium py-2 px-3 mac-input min-h-[42px]">
+                    <option value="Shift 1">Shift 1</option><option value="Shift 2">Shift 2</option><option value="Shift 3">Shift 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Start (24 Jam) <span class="text-mac-red">*</span></label>
+                  <div class="flex items-center gap-1.5">
+                    <select id="startHour" required class="w-full text-sm font-mono font-semibold text-center py-2 px-1 mac-input min-h-[42px]"></select>
+                    <span class="font-bold text-mac-subtext">:</span>
+                    <select id="startMin" required class="w-full text-sm font-mono font-semibold text-center py-2 px-1 mac-input min-h-[42px]"></select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Stop (24 Jam) <span class="text-mac-red">*</span></label>
+                  <div class="flex items-center gap-1.5">
+                    <select id="stopHour" required class="w-full text-sm font-mono font-semibold text-center py-2 px-1 mac-input min-h-[42px]"></select>
+                    <span class="font-bold text-mac-subtext">:</span>
+                    <select id="stopMin" required class="w-full text-sm font-mono font-semibold text-center py-2 px-1 mac-input min-h-[42px]"></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-[11px] font-semibold uppercase text-mac-subtext tracking-wider px-3 mb-1.5">3. Hasil Produksi & Keterangan</h4>
+              <div class="bg-white rounded-2xl border border-black/5 shadow-sm p-5 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-mac-text mb-1.5">Jumlah Part OK <span class="text-mac-red">*</span></label>
+                    <input type="number" id="inputOkQty" min="0" required value="0" oninput="calculateTotal()" class="w-full text-sm font-mono font-bold py-2 px-3 mac-input min-h-[42px]">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-mac-text mb-1.5">Jumlah Part Check Lab <span class="text-mac-red">*</span></label>
+                    <input type="number" id="inputLabQty" min="0" required value="0" oninput="calculateTotal()" class="w-full text-sm font-mono font-bold py-2 px-3 mac-input min-h-[42px]">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-mac-text mb-1.5">Total Produksi</label>
+                    <input type="number" id="inputTotalQty" readonly value="0" class="w-full text-sm font-mono font-bold py-2 px-3 rounded-lg bg-[#f5f5f7] border border-transparent text-mac-blue cursor-not-allowed min-h-[42px]">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-mac-text mb-1.5">Keterangan</label>
+                  <textarea id="inputKeterangan" rows="2" placeholder="Catatan tambahan (opsional)..." class="w-full text-sm font-medium py-2 px-3 mac-input"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
+              <button type="reset" onclick="resetTimeSelectors()" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-white border border-black/10 text-mac-text font-semibold text-xs sm:text-sm hover:bg-gray-50 transition min-h-[42px]">Reset</button>
+              <button type="submit" id="btnSubmitForm" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-mac-blue hover:bg-mac-blueHover text-white font-semibold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 min-h-[42px]">
+                <i class="fa-solid fa-check"></i><span id="btnSubmitText">Simpan Data</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- REGISTER -->
+        <section id="panelRegister" class="hidden space-y-4">
+          <div class="bg-white p-4 rounded-2xl border border-black/5 shadow-sm space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-mac-subtext text-xs"></i>
+                <input type="text" id="tableSearchText" oninput="applyTableFilter()" placeholder="Search Part, Lot, Invoice..." class="pl-8 pr-3 py-2 text-xs sm:text-sm font-medium mac-input w-full min-h-[38px]">
+              </div>
+              <select id="filterTahun" onchange="applyTableFilter()" class="text-xs sm:text-sm font-medium py-2 px-3 mac-input min-h-[38px]"><option value="ALL">Semua Tahun</option></select>
+              <select id="filterBulan" onchange="applyTableFilter()" class="text-xs sm:text-sm font-medium py-2 px-3 mac-input min-h-[38px]">
+                <option value="ALL">Semua Bulan</option>
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option>
+                <option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Agustus</option>
+                <option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+              </select>
+              <select id="filterDiameter" onchange="applyTableFilter()" class="text-xs sm:text-sm font-medium py-2 px-3 mac-input min-h-[38px]"><option value="ALL">Semua Diameter</option></select>
+            </div>
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-black/5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="exportToExcel()" class="px-3 py-1.5 rounded-lg bg-[#28a745]/10 hover:bg-[#28a745]/20 text-[#218838] font-semibold text-xs flex items-center gap-1.5 transition"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                <button onclick="exportToPDF()" class="px-3 py-1.5 rounded-lg bg-mac-red/10 hover:bg-mac-red/20 text-mac-red font-semibold text-xs flex items-center gap-1.5 transition"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                <button onclick="openPrintPreview()" class="px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 text-mac-text font-semibold text-xs flex items-center gap-1.5 transition"><i class="fa-solid fa-print"></i> Print Preview</button>
+              </div>
+              <button onclick="refreshData()" class="px-3 py-1.5 rounded-lg bg-mac-blue/10 hover:bg-mac-blue/20 text-mac-blue text-xs font-semibold transition flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> Sync</button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+            <div id="mobileCardsContainer" class="block md:hidden divide-y divide-black/5 p-3 space-y-3"></div>
+            <div class="hidden md:block overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-[#f5f5f7] text-mac-subtext font-semibold border-b border-black/10 text-[11px]">
+                    <th class="p-3 text-center">No</th><th class="p-3">Tgl Cutting</th><th class="p-3">Dia.</th><th class="p-3">Part No</th>
+                    <th class="p-3">No. Invoice</th><th class="p-3">Bundle</th><th class="p-3">Lot Harden</th><th class="p-3">Tgl Harden</th>
+                    <th class="p-3">Operator</th><th class="p-3">Shift</th><th class="p-3">Jam</th><th class="p-3 text-right">OK</th>
+                    <th class="p-3 text-right">Lab</th><th class="p-3 text-right">Total</th><th class="p-3">Ket</th><th class="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-black/5 font-medium text-mac-text"></tbody>
+              </table>
+            </div>
+            <div class="px-4 py-2.5 bg-[#f5f5f7] border-t border-black/5 flex items-center justify-between text-[11px] text-mac-subtext font-medium">
+              <div>Menampilkan <span id="tableShowingCount" class="font-bold text-mac-text">0</span> dari <span id="tableTotalCount" class="font-bold text-mac-text">0</span> item</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL MASTER -->
+  <div id="modalMaster" class="hidden fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-[320px] w-full p-5 border border-black/10 text-center">
+      <div class="w-10 h-10 mx-auto mb-3 rounded-xl bg-blue-50 text-mac-blue flex items-center justify-center text-base"><i class="fa-solid fa-plus"></i></div>
+      <h3 id="modalMasterTitle" class="text-sm font-bold text-mac-text mb-1">Tambah Master Data</h3>
+      <p class="text-xs text-mac-subtext mb-4">Masukkan nilai baru untuk disimpan ke daftar pilihan.</p>
+      <input type="text" id="modalMasterInput" class="w-full text-xs font-medium py-2 px-3 mac-input mb-4 text-center" placeholder="Ketik nilai baru...">
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeMasterModal()" class="py-2 rounded-lg text-xs font-semibold text-mac-text bg-black/5 hover:bg-black/10 transition">Batal</button>
+        <button onclick="submitNewMaster()" class="py-2 rounded-lg bg-mac-blue hover:bg-mac-blueHover text-white text-xs font-semibold transition">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRINT -->
+  <div id="modalPrint" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col p-4 sm:p-8 overflow-y-auto">
+    <div class="max-w-5xl w-full mx-auto bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden my-auto border border-black/10">
+      <div class="mac-titlebar px-4 py-3 border-b border-black/10 flex items-center justify-between no-print">
+        <div class="flex items-center gap-2"><i class="fa-solid fa-print text-mac-blue"></i><span class="font-bold text-xs sm:text-sm text-mac-text">Print Preview</span></div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-3.5 py-1.5 bg-mac-blue hover:bg-mac-blueHover text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-print"></i> Print</button>
+          <button onclick="closePrintPreview()" class="px-3.5 py-1.5 bg-black/5 hover:bg-black/10 text-mac-text text-xs font-semibold rounded-lg">Done</button>
+        </div>
+      </div>
+      <div id="printArea" class="p-8 bg-white text-slate-800">
+        <div class="border-b-2 border-slate-900 pb-4 mb-6 text-center">
+          <h2 class="text-xl font-black uppercase tracking-wider">PT. ADHI CHANDRA JAYA</h2>
+          <h3 class="text-base font-bold text-slate-700">LAPORAN LOG BOOK INDUCTION HARDENING</h3>
+          <p class="text-xs text-slate-500 mt-1">Dicetak pada: <span id="printTimestamp"></span> | Filter: <span id="printFilterDesc">Semua Data</span></p>
+        </div>
+        <table class="w-full text-left border-collapse border border-slate-300 text-[10px]">
+          <thead>
+            <tr class="bg-slate-100 font-bold text-slate-700 uppercase">
+              <th class="border border-slate-300 p-2 text-center">No</th><th class="border border-slate-300 p-2">Cutting</th><th class="border border-slate-300 p-2">Dia.</th>
+              <th class="border border-slate-300 p-2">Part No</th><th class="border border-slate-300 p-2">Invoice</th><th class="border border-slate-300 p-2">Bundle</th>
+              <th class="border border-slate-300 p-2">Lot Harden</th><th class="border border-slate-300 p-2">Tgl Harden</th><th class="border border-slate-300 p-2">Operator</th>
+              <th class="border border-slate-300 p-2">Shift</th><th class="border border-slate-300 p-2">Jam</th><th class="border border-slate-300 p-2 text-right">OK</th>
+              <th class="border border-slate-300 p-2 text-right">Lab</th><th class="border border-slate-300 p-2 text-right">Total</th><th class="border border-slate-300 p-2">Ket</th>
+            </tr>
+          </thead>
+          <tbody id="printTableBody"></tbody>
+        </table>
+        <div class="mt-12 grid grid-cols-2 gap-12 text-center text-xs max-w-2xl mx-auto">
+          <div><p class="font-bold text-slate-700">Dibuat Oleh:</p><div class="h-16"></div><p class="border-t border-slate-400 font-bold mx-8 pt-1">( Operator Produksi )</p></div>
+          <div><p class="font-bold text-slate-700">Disetujui Oleh:</p><div class="h-16"></div><p class="border-t border-slate-400 font-bold mx-8 pt-1">( Kepala Regu IH )</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= KONFIGURASI BACKEND (GitHub Pages) =================
+       Isi API_URL dengan URL Web App Google Apps Script (berakhiran /exec).
+       Jika dikosongkan, aplikasi berjalan dalam MODE DEMO (data lokal, tidak tersimpan ke Sheet). -->
+  <script>
+    const API_URL = ""; // contoh: "https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec"
+
+    // Shim: meniru google.script.run agar seluruh kode UI tetap sama,
+    // tetapi memanggil Apps Script lewat fetch (karena GitHub Pages bukan di dalam Apps Script).
+    if (API_URL) {
+      const makeRunner = (ok, fail) => new Proxy({}, {
+        get(_, prop) {
+          if (prop === 'withSuccessHandler') return (fn) => makeRunner(fn, fail);
+          if (prop === 'withFailureHandler') return (fn) => makeRunner(ok, fn);
+          return (...args) => {
+            fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari preflight CORS
+              body: JSON.stringify({ fn: prop, args })
+            })
+              .then(r => r.json())
+              .then(res => { if (res && res.__error) throw new Error(res.__error); ok && ok(res); })
+              .catch(err => { fail ? fail(err.message || err) : console.error(err); });
+          };
+        }
+      });
+      window.google = { script: { run: makeRunner(null, null) } };
+    }
+  </script>
+
+  <script>
+    let currentUser = null;
+    let rawLogs = [];
+    let filteredLogs = [];
+    let masterData = { diameters: [], operators: [], partNumbers: [] };
+    let currentMasterType = null;
+    let paretoChartInstance = null;
+    let pieChartInstance = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return "-";
+      const parts = dateStr.toString().split('-');
+      if (parts.length === 3) return `${parts[2].padStart(2,'0')}/${parts[1].padStart(2,'0')}/${parts[0]}`;
+      return dateStr;
+    }
+
+    function localToday() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function init24HourTimeSelectors() {
+      const hourOptions = Array.from({ length: 24 }, (_, i) => { const h = String(i).padStart(2,'0'); return `<option value="${h}">${h}</option>`; }).join('');
+      const minOptions = Array.from({ length: 60 }, (_, i) => { const m = String(i).padStart(2,'0'); return `<option value="${m}">${m}</option>`; }).join('');
+      document.getElementById('startHour').innerHTML = hourOptions;
+      document.getElementById('startMin').innerHTML = minOptions;
+      document.getElementById('stopHour').innerHTML = hourOptions;
+      document.getElementById('stopMin').innerHTML = minOptions;
+      resetTimeSelectors();
+    }
+
+    function resetTimeSelectors() {
+      document.getElementById('startHour').value = '07';
+      document.getElementById('startMin').value = '30';
+      document.getElementById('stopHour').value = '16';
+      document.getElementById('stopMin').value = '30';
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      init24HourTimeSelectors();
+      const today = localToday();
+      document.getElementById('inputCuttingDate').value = today;
+      document.getElementById('inputHardenDate').value = today;
+      updateLotPreview();
+
+      const badge = document.getElementById('modeBadge');
+      if (API_URL) {
+        badge.textContent = 'Terhubung ke Google Sheet';
+        badge.className = 'inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-4 bg-emerald-50 text-[#218838]';
+      } else {
+        badge.textContent = 'Mode Demo (data lokal)';
+        badge.className = 'inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-4 bg-orange-50 text-mac-orange';
+      }
+    });
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const msg = document.getElementById('toastMsg');
+      icon.className = "w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shrink-0 ";
+      if (type === 'success') { icon.classList.add('bg-[#34c759]'); icon.innerHTML = '<i class="fa-solid fa-check"></i>'; }
+      else if (type === 'error') { icon.classList.add('bg-[#ff3b30]'); icon.innerHTML = '<i class="fa-solid fa-exclamation"></i>'; }
+      else { icon.classList.add('bg-[#007aff]'); icon.innerHTML = '<i class="fa-solid fa-info"></i>'; }
+      msg.innerText = message;
+      toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.add('translate-y-[-150%]', 'opacity-0'), 3500);
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUsername').value;
+      const p = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('btnLogin');
+      const idle = '<span>Sign In</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false; btn.innerHTML = idle;
+            if (res.success) { currentUser = res.user; initAppInterface(); }
+            else showToast(res.message, 'error');
+          })
+          .withFailureHandler((err) => {
+            btn.disabled = false; btn.innerHTML = idle;
+            showToast("Koneksi gagal: " + err, 'error');
+          })
+          .authenticateUser(u, p);
+      } else {
+        setTimeout(() => {
+          btn.disabled = false; btn.innerHTML = idle;
+          currentUser = { username: u, role: u.toLowerCase().includes('admin') ? 'Admin' : 'User', fullName: u };
+          initAppInterface();
+        }, 500);
+      }
+    }
+
+    function initAppInterface() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('appView').classList.remove('hidden');
+      document.getElementById('navUserName').innerText = currentUser.fullName;
+      document.getElementById('navUserRole').innerText = currentUser.role;
+      loadMasterDropdowns();
+      refreshData();
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('formLogin').reset();
+      document.getElementById('appView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+      showToast("Berhasil keluar dari sesi.", "info");
+    }
+
+    function switchTab(tabName) {
+      ['dashboard', 'form', 'register'].forEach(t => {
+        const panel = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+        const btn = document.getElementById('tabBtn-' + t);
+        if (t === tabName) { panel.classList.remove('hidden'); btn.classList.add('active'); }
+        else { panel.classList.add('hidden'); btn.classList.remove('active'); }
+      });
+      if (tabName === 'dashboard') setTimeout(renderCharts, 100);
+    }
+
+    function loadMasterDropdowns() {
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler((res) => { if (res.success) { masterData = res; populateSelects(); } })
+          .withFailureHandler((err) => showToast("Gagal memuat master: " + err, 'error'))
+          .getDropdownData();
+      } else {
+        masterData = { diameters: ["10.07", "12.57"], operators: ["Subur", "Herman"], partNumbers: ["PN-7721-A", "PN-8802-C", "PN-3341-B"] };
+        populateSelects();
+      }
+    }
+
+    function populateSelects() {
+      const diaOpts = masterData.diameters.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+      document.getElementById('inputDiameter').innerHTML = diaOpts;
+      const filterDiaOpts = `<option value="ALL">Semua Diameter</option>` + diaOpts;
+      const fd = document.getElementById('filterDiameter'), fdd = document.getElementById('filterDashDiameter');
+      const fdv = fd.value, fddv = fdd.value;
+      fd.innerHTML = filterDiaOpts; fdd.innerHTML = filterDiaOpts;
+      fd.value = fdv || 'ALL'; fdd.value = fddv || 'ALL';
+      document.getElementById('inputOperator').innerHTML = masterData.operators.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+      document.getElementById('partNoList').innerHTML = masterData.partNumbers.map(p => `<option value="${esc(p)}">`).join('');
+    }
+
+    function calculateTotal() {
+      const ok = parseInt(document.getElementById('inputOkQty').value, 10) || 0;
+      const lab = parseInt(document.getElementById('inputLabQty').value, 10) || 0;
+      document.getElementById('inputTotalQty').value = ok + lab;
+    }
+
+    function updateLotPreview() {
+      const dt = document.getElementById('inputHardenDate').value;
+      if (!dt) return;
+      const [y, m] = dt.split('-');
+      document.getElementById('lotPreview').innerText = `HKHP1/${parseInt(m,10)}/${y.slice(-2)}/xxxxx (Auto)`;
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmitForm');
+      const btnText = document.getElementById('btnSubmitText');
+      const restore = editing => { btn.disabled = false; btnText.innerText = editing ? "Perbarui Data" : "Simpan Data"; };
+      const wasEditing = !!document.getElementById('editRecordId').value;
+      btn.disabled = true;
+      btnText.innerText = "Menyimpan...";
+
+      const formData = {
+        recordId: document.getElementById('editRecordId').value,
+        lotNumber: document.getElementById('editLotNumber').value,
+        cuttingDate: document.getElementById('inputCuttingDate').value,
+        diameter: document.getElementById('inputDiameter').value,
+        partNo: document.getElementById('inputPartNo').value,
+        invoiceNo: document.getElementById('inputInvoiceNo').value,
+        bundleNo: document.getElementById('inputBundleNo').value,
+        hardenDate: document.getElementById('inputHardenDate').value,
+        operator: document.getElementById('inputOperator').value,
+        shift: document.getElementById('inputShift').value,
+        startTime: `${document.getElementById('startHour').value}:${document.getElementById('startMin').value}`,
+        stopTime: `${document.getElementById('stopHour').value}:${document.getElementById('stopMin').value}`,
+        okQty: document.getElementById('inputOkQty').value,
+        labQty: document.getElementById('inputLabQty').value,
+        keterangan: document.getElementById('inputKeterangan').value
+      };
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            restore(false);
+            if (res.success) {
+              showToast(res.message, "success");
+              cancelEditMode(); refreshData(); loadMasterDropdowns(); switchTab('register');
+            } else { restore(wasEditing); showToast(res.message, "error"); }
+          })
+          .withFailureHandler((err) => { restore(wasEditing); showToast("Gagal menyimpan: " + err, "error"); })
+          .saveProductionLog(formData);
+      } else {
+        // MODE DEMO: simpan ke memori lokal
+        setTimeout(() => {
+          const ok = Number(formData.okQty) || 0, lab = Number(formData.labQty) || 0;
+          if (formData.recordId) {
+            const i = rawLogs.findIndex(r => r.recordId === formData.recordId);
+            if (i > -1) rawLogs[i] = { ...rawLogs[i], ...formData, bundleNo: Number(formData.bundleNo), okQty: ok, labQty: lab, totalQty: ok + lab };
+          } else {
+            const [y, m] = formData.hardenDate.split('-');
+            const seq = rawLogs.length + 1;
+            rawLogs.unshift({ ...formData, no: seq, bundleNo: Number(formData.bundleNo), okQty: ok, labQty: lab, totalQty: ok + lab,
+              lotNumber: `HKHP1/${parseInt(m,10)}/${y.slice(-2)}/${String(seq).padStart(5,'0')}`, recordId: 'REC-' + Date.now() });
+          }
+          restore(false);
+          showToast("Data tersimpan (mode demo, tidak masuk Sheet).", "success");
+          cancelEditMode(); populateFilterYears(); applyTableFilter(); updateDashboardMetrics(); renderCharts(); switchTab('register');
+        }, 400);
+      }
+    }
+
+    function refreshData() {
+      const iconSync = document.getElementById('iconSync');
+      if (iconSync) iconSync.classList.add('fa-spin');
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            if (iconSync) iconSync.classList.remove('fa-spin');
+            if (res && res.success) {
+              rawLogs = res.data || [];
+              populateFilterYears(); applyTableFilter(); updateDashboardMetrics(); renderCharts();
+              showToast(`Tersinkronisasi (${rawLogs.length} data dari Sheet)`, "success");
+            } else showToast(res ? res.message : "Respon server kosong", "error");
+          })
+          .withFailureHandler((err) => {
+            if (iconSync) iconSync.classList.remove('fa-spin');
+            showToast("Gagal sinkronisasi Sheet: " + err, "error");
+          })
+          .getAllLogs();
+      } else {
+        if (iconSync) iconSync.classList.remove('fa-spin');
+        if (rawLogs.length === 0) {
+          rawLogs = [
+            { no: 1, cuttingDate: '2026-11-01', diameter: '10.07', partNo: 'PN-7721-A', invoiceNo: 'INV-9901', bundleNo: 4, lotNumber: 'HKHP1/11/26/00001', hardenDate: '2026-11-02', operator: 'Subur', shift: 'Shift 1', startTime: '07:30', stopTime: '15:30', okQty: 1200, labQty: 10, totalQty: 1210, keterangan: 'Normal', recordId: 'REC-1' },
+            { no: 2, cuttingDate: '2026-11-02', diameter: '12.57', partNo: 'PN-8802-C', invoiceNo: 'INV-9902', bundleNo: 5, lotNumber: 'HKHP1/11/26/00002', hardenDate: '2026-11-03', operator: 'Herman', shift: 'Shift 2', startTime: '15:30', stopTime: '23:00', okQty: 950, labQty: 15, totalQty: 965, keterangan: 'Coil diganti', recordId: 'REC-2' },
+            { no: 3, cuttingDate: '2026-11-03', diameter: '10.07', partNo: 'PN-7721-A', invoiceNo: 'INV-9903', bundleNo: 6, lotNumber: 'HKHP1/11/26/00003', hardenDate: '2026-11-04', operator: 'Subur', shift: 'Shift 1', startTime: '08:00', stopTime: '16:00', okQty: 1100, labQty: 8, totalQty: 1108, keterangan: '', recordId: 'REC-3' }
+          ];
+        }
+        populateFilterYears(); applyTableFilter(); updateDashboardMetrics(); renderCharts();
+      }
+    }
+
+    function populateFilterYears() {
+      const years = new Set();
+      rawLogs.forEach(r => {
+        if (r.hardenDate) {
+          const p = r.hardenDate.split('-');
+          if (p[0] && p[0].length === 4) years.add(p[0]);
+        }
+      });
+      const curT = document.getElementById('filterTahun').value || "ALL";
+      const curD = document.getElementById('filterDashTahun').value || "ALL";
+      const yrArray = Array.from(years).sort().reverse();
+      const yrOptions = `<option value="ALL">Semua Tahun</option>` + yrArray.map(y => `<option value="${y}">${y}</option>`).join('');
+      document.getElementById('filterTahun').innerHTML = yrOptions;
+      document.getElementById('filterDashTahun').innerHTML = yrOptions;
+      document.getElementById('filterTahun').value = yrArray.includes(curT) ? curT : "ALL";
+      document.getElementById('filterDashTahun').value = yrArray.includes(curD) ? curD : "ALL";
+    }
+
+    function applyTableFilter() {
+      const query = (document.getElementById('tableSearchText').value || '').trim().toLowerCase();
+      const fTahun = document.getElementById('filterTahun').value;
+      const fBulan = document.getElementById('filterBulan').value;
+      const fDia = document.getElementById('filterDiameter').value;
+
+      filteredLogs = rawLogs.filter(row => {
+        const matchesQuery = !query ||
+          (row.partNo && row.partNo.toLowerCase().includes(query)) ||
+          (row.lotNumber && row.lotNumber.toLowerCase().includes(query)) ||
+          (row.invoiceNo && row.invoiceNo.toLowerCase().includes(query)) ||
+          (row.operator && row.operator.toLowerCase().includes(query));
+        let matchesYear = true, matchesMonth = true;
+        if (row.hardenDate) {
+          const p = row.hardenDate.split('-');
+          if (p.length >= 2) {
+            if (fTahun !== "ALL") matchesYear = (p[0] === fTahun);
+            if (fBulan !== "ALL") matchesMonth = (parseInt(p[1], 10).toString() === fBulan);
+          }
+        }
+        const matchesDia = (fDia === "ALL") || (String(row.diameter).trim() === String(fDia).trim());
+        return matchesQuery && matchesYear && matchesMonth && matchesDia;
+      });
+      renderTable();
+    }
+
+    const shiftClass = (s, a, b, c) => s === 'Shift 1' ? a : s === 'Shift 2' ? b : c;
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const mobileContainer = document.getElementById('mobileCardsContainer');
+      document.getElementById('tableShowingCount').innerText = filteredLogs.length;
+      document.getElementById('tableTotalCount').innerText = rawLogs.length;
+
+      if (filteredLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="16" class="p-8 text-center text-mac-subtext font-medium">Tidak ada data yang sesuai filter.</td></tr>`;
+        mobileContainer.innerHTML = `<div class="p-8 text-center text-mac-subtext font-medium">Tidak ada data yang sesuai filter.</div>`;
+        return;
+      }
+
+      const isAdmin = currentUser && currentUser.role === 'Admin';
+
+      tbody.innerHTML = filteredLogs.map((row, idx) => `
+        <tr class="hover:bg-[#007aff]/[0.04] transition">
+          <td class="p-3 text-center font-mono text-mac-subtext">${idx + 1}</td>
+          <td class="p-3 whitespace-nowrap">${formatDisplayDate(row.cuttingDate)}</td>
+          <td class="p-3 font-mono font-semibold">${esc(row.diameter)}</td>
+          <td class="p-3 font-bold text-mac-text">${esc(row.partNo)}</td>
+          <td class="p-3 text-mac-subtext">${esc(row.invoiceNo)}</td>
+          <td class="p-3 font-mono">${esc(row.bundleNo)}</td>
+          <td class="p-3 font-mono font-semibold text-mac-blue">${esc(row.lotNumber)}</td>
+          <td class="p-3 whitespace-nowrap">${formatDisplayDate(row.hardenDate)}</td>
+          <td class="p-3 font-medium">${esc(row.operator)}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${shiftClass(row.shift,'bg-blue-50 text-mac-blue','bg-orange-50 text-mac-orange','bg-purple-50 text-purple-600')}">${esc(row.shift)}</span></td>
+          <td class="p-3 text-mac-subtext font-mono text-[11px]">${esc(row.startTime)}-${esc(row.stopTime)}</td>
+          <td class="p-3 text-right font-mono font-semibold text-[#28a745]">${Number(row.okQty).toLocaleString()}</td>
+          <td class="p-3 text-right font-mono font-semibold text-mac-orange">${Number(row.labQty).toLocaleString()}</td>
+          <td class="p-3 text-right font-mono font-bold text-mac-text">${Number(row.totalQty).toLocaleString()}</td>
+          <td class="p-3 text-mac-subtext truncate max-w-[120px]" title="${esc(row.keterangan)}">${esc(row.keterangan) || '-'}</td>
+          <td class="p-3 text-center whitespace-nowrap">
+            <button onclick="editRecord('${esc(row.recordId)}')" class="p-1.5 text-mac-blue hover:bg-blue-50 rounded-lg transition" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            ${isAdmin ? `<button onclick="confirmDelete('${esc(row.recordId)}')" class="p-1.5 text-mac-red hover:bg-red-50 rounded-lg ml-0.5 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </td>
+        </tr>`).join('');
+
+      mobileContainer.innerHTML = filteredLogs.map((row, idx) => `
+        <div class="bg-[#f5f5f7]/60 p-4 rounded-xl border border-black/5 space-y-3">
+          <div class="flex items-center justify-between border-b border-black/5 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-mac-blue text-white font-mono text-[11px] font-bold">#${idx + 1}</span>
+              <span class="font-bold text-mac-text text-sm">${esc(row.partNo)}</span>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${shiftClass(row.shift,'bg-blue-100 text-mac-blue','bg-orange-100 text-mac-orange','bg-purple-100 text-purple-600')}">${esc(row.shift)}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-mac-subtext text-[10px] block font-semibold">No. Lot Harden</span><span class="font-mono font-bold text-mac-blue text-xs">${esc(row.lotNumber)}</span></div>
+            <div><span class="text-mac-subtext text-[10px] block font-semibold">Diameter / Bundle</span><span class="font-mono font-semibold text-mac-text">Dia ${esc(row.diameter)} | Bndl #${esc(row.bundleNo)}</span></div>
+            <div><span class="text-mac-subtext text-[10px] block font-semibold">Tgl Cut / Harden</span><span class="font-medium text-mac-text">${formatDisplayDate(row.cuttingDate)} / ${formatDisplayDate(row.hardenDate)}</span></div>
+            <div><span class="text-mac-subtext text-[10px] block font-semibold">Operator / Jam</span><span class="font-medium text-mac-text">${esc(row.operator)} (${esc(row.startTime)}-${esc(row.stopTime)})</span></div>
+          </div>
+          <div class="bg-white p-2.5 rounded-xl border border-black/5 flex items-center justify-between text-xs">
+            <div><span class="text-[10px] text-[#28a745] font-semibold block">Part OK</span><span class="font-mono font-bold text-[#28a745]">${Number(row.okQty).toLocaleString()}</span></div>
+            <div><span class="text-[10px] text-mac-orange font-semibold block">Check Lab</span><span class="font-mono font-bold text-mac-orange">${Number(row.labQty).toLocaleString()}</span></div>
+            <div class="text-right"><span class="text-[10px] text-mac-subtext font-semibold block">Total</span><span class="font-mono font-bold text-mac-text">${Number(row.totalQty).toLocaleString()} pcs</span></div>
+          </div>
+          ${row.keterangan ? `<div class="text-[11px] text-mac-subtext bg-white p-2 rounded-lg border border-black/5">Catatan: ${esc(row.keterangan)}</div>` : ''}
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button onclick="editRecord('${esc(row.recordId)}')" class="flex-1 py-2 px-3 bg-white hover:bg-gray-50 text-mac-blue border border-black/10 font-semibold text-xs rounded-lg flex items-center justify-center gap-1.5 min-h-[38px]"><i class="fa-solid fa-pen"></i> Edit</button>
+            ${isAdmin ? `<button onclick="confirmDelete('${esc(row.recordId)}')" class="py-2 px-3 bg-mac-red/10 hover:bg-mac-red/20 text-mac-red font-semibold text-xs rounded-lg flex items-center justify-center gap-1.5 min-h-[38px]"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    function editRecord(recordId) {
+      const record = rawLogs.find(r => r.recordId === recordId);
+      if (!record) return;
+
+      document.getElementById('editRecordId').value = record.recordId;
+      document.getElementById('editLotNumber').value = record.lotNumber;
+      document.getElementById('inputCuttingDate').value = record.cuttingDate;
+      document.getElementById('inputDiameter').value = record.diameter;
+      document.getElementById('inputPartNo').value = record.partNo;
+      document.getElementById('inputInvoiceNo').value = record.invoiceNo;
+      document.getElementById('inputBundleNo').value = record.bundleNo;
+      document.getElementById('inputHardenDate').value = record.hardenDate;
+      document.getElementById('inputOperator').value = record.operator;
+      document.getElementById('inputShift').value = record.shift;
+
+      if (record.startTime && record.startTime.includes(':')) {
+        const [h, m] = record.startTime.split(':');
+        document.getElementById('startHour').value = h.padStart(2, '0');
+        document.getElementById('startMin').value = m.padStart(2, '0');
+      }
+      if (record.stopTime && record.stopTime.includes(':')) {
+        const [h, m] = record.stopTime.split(':');
+        document.getElementById('stopHour').value = h.padStart(2, '0');
+        document.getElementById('stopMin').value = m.padStart(2, '0');
+      }
+
+      document.getElementById('inputOkQty').value = record.okQty;
+      document.getElementById('inputLabQty').value = record.labQty;
+      document.getElementById('inputTotalQty').value = record.totalQty;
+      document.getElementById('inputKeterangan').value = record.keterangan;
+
+      document.getElementById('lotPreview').innerText = record.lotNumber + " (Editing)";
+      document.getElementById('formTitle').innerText = `Edit Log (${record.lotNumber})`;
+      document.getElementById('btnSubmitText').innerText = "Perbarui Data";
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+      switchTab('form');
+    }
+
+    function cancelEditMode() {
+      document.getElementById('editRecordId').value = "";
+      document.getElementById('editLotNumber').value = "";
+      document.getElementById('productionForm').reset();
+      resetTimeSelectors();
+      const today = localToday();
+      document.getElementById('inputCuttingDate').value = today;
+      document.getElementById('inputHardenDate').value = today;
+      updateLotPreview();
+      document.getElementById('formTitle').innerText = "Input Log Produksi Baru";
+      document.getElementById('btnSubmitText').innerText = "Simpan Data";
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+    }
+
+    function confirmDelete(recordId) {
+      if (!currentUser || currentUser.role !== 'Admin') { showToast("Hanya Admin yang dapat menghapus data!", "error"); return; }
+      if (!confirm("Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
+
+      if (typeof google !== 'undefined' && google.script) {
+        showToast("Menghapus data...", "info");
+        google.script.run
+          .withSuccessHandler((res) => {
+            if (res.success) { showToast(res.message, "success"); refreshData(); }
+            else showToast(res.message, "error");
+          })
+          .withFailureHandler((err) => showToast("Gagal menghapus: " + err, "error"))
+          .deleteLog(recordId);
+      } else {
+        rawLogs = rawLogs.filter(r => r.recordId !== recordId);
+        applyTableFilter(); updateDashboardMetrics(); renderCharts();
+        showToast("Data berhasil dihapus dari simulasi.", "success");
+      }
+    }
+
+    function updateDashboardMetrics() {
+      let total = 0, ok = 0, lab = 0;
+      rawLogs.forEach(r => { total += Number(r.totalQty) || 0; ok += Number(r.okQty) || 0; lab += Number(r.labQty) || 0; });
+      document.getElementById('statTotalProd').innerText = total.toLocaleString();
+      document.getElementById('statPartOk').innerText = ok.toLocaleString();
+      document.getElementById('statPartLab').innerText = lab.toLocaleString();
+    }
+
+    function renderCharts() {
+      const fTahun = document.getElementById('filterDashTahun').value;
+      const fBulan = document.getElementById('filterDashBulan').value;
+      const fDia = document.getElementById('filterDashDiameter').value;
+
+      const chartData = rawLogs.filter(row => {
+        let my = true, mm = true;
+        if (row.hardenDate) {
+          const p = row.hardenDate.split('-');
+          if (fTahun !== "ALL") my = (p[0] === fTahun);
+          if (fBulan !== "ALL") mm = (parseInt(p[1], 10).toString() === fBulan);
+        }
+        const md = (fDia === "ALL") || (String(row.diameter) === String(fDia));
+        return my && mm && md;
+      });
+
+      const partQtyMap = {};
+      chartData.forEach(r => { const pn = r.partNo || "Unknown"; partQtyMap[pn] = (partQtyMap[pn] || 0) + Number(r.totalQty); });
+      const sortedParts = Object.entries(partQtyMap).sort((a, b) => b[1] - a[1]);
+      const totalVolume = sortedParts.reduce((s, i) => s + i[1], 0);
+
+      const labelsPareto = [], dataQty = [], dataCumulative = [];
+      let running = 0;
+      sortedParts.forEach(([pn, qty]) => {
+        labelsPareto.push(pn); dataQty.push(qty); running += qty;
+        dataCumulative.push(parseFloat((totalVolume > 0 ? (running / totalVolume) * 100 : 0).toFixed(1)));
+      });
+
+      if (paretoChartInstance) paretoChartInstance.destroy();
+      paretoChartInstance = new Chart(document.getElementById('paretoChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labelsPareto,
+          datasets: [
+            { label: 'Kumulatif (%)', data: dataCumulative, type: 'line', borderColor: '#ff9500', backgroundColor: '#ff9500', borderWidth: 2.5, pointRadius: 4, yAxisID: 'yCumulative', tension: 0.25 },
+            { label: 'Output (Pcs)', data: dataQty, backgroundColor: '#007aff', borderRadius: 6, yAxisID: 'yQty' }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            yQty: { type: 'linear', position: 'left', title: { display: true, text: 'Total Output (Pcs)', font: { size: 10, weight: '600' } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+            yCumulative: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: 'Kumulatif (%)', font: { size: 10, weight: '600' } }, grid: { drawOnChartArea: false } }
+          },
+          plugins: { legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } } }
+        }
+      });
+
+      const diaMap = {};
+      chartData.forEach(r => { const d = "Dia " + (r.diameter || "Lainnya"); diaMap[d] = (diaMap[d] || 0) + Number(r.totalQty); });
+      const pieLabels = Object.keys(diaMap), pieValues = Object.values(diaMap);
+
+      if (pieChartInstance) pieChartInstance.destroy();
+      pieChartInstance = new Chart(document.getElementById('pieChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: pieLabels.length ? pieLabels : ['Belum ada data'],
+          datasets: [{ data: pieValues.length ? pieValues : [1], backgroundColor: ['#007aff', '#34c759', '#ff9500', '#af52de', '#ff2d55'], borderWidth: 3, borderColor: '#ffffff' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } } }, cutout: '66%' }
+      });
+    }
+
+    function promptAddMaster(type) {
+      currentMasterType = type;
+      document.getElementById('modalMasterTitle').innerText = type === 'DIAMETER' ? 'Tambah Diameter Baru' : 'Tambah Operator Baru';
+      document.getElementById('modalMasterInput').value = '';
+      document.getElementById('modalMasterInput').placeholder = type === 'DIAMETER' ? 'Contoh: 15.20' : 'Contoh: Joko Susilo';
+      document.getElementById('modalMaster').classList.remove('hidden');
+    }
+    function closeMasterModal() { document.getElementById('modalMaster').classList.add('hidden'); }
+
+    function submitNewMaster() {
+      const val = document.getElementById('modalMasterInput').value.trim();
+      if (!val) { showToast("Nilai tidak boleh kosong", "error"); return; }
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            if (res.success) { showToast(res.message, "success"); closeMasterModal(); loadMasterDropdowns(); }
+            else showToast(res.message, "error");
+          })
+          .withFailureHandler((err) => showToast("Gagal: " + err, "error"))
+          .addMasterOption(currentMasterType, val);
+      } else {
+        if (currentMasterType === 'DIAMETER') masterData.diameters.push(val);
+        if (currentMasterType === 'OPERATOR') masterData.operators.push(val);
+        populateSelects(); closeMasterModal();
+        showToast("Opsi berhasil ditambahkan!", "success");
+      }
+    }
+
+    function exportToExcel() {
+      if (filteredLogs.length === 0) { showToast("Tidak ada data untuk diexport", "info"); return; }
+      const rows = filteredLogs.map((r, i) => ({
+        "No": i + 1, "Tanggal Cutting": formatDisplayDate(r.cuttingDate), "Diameter": r.diameter, "Part No": r.partNo,
+        "No Invoice": r.invoiceNo, "No Bundle": r.bundleNo, "Lot Produksi Harden": r.lotNumber, "Tanggal Harden": formatDisplayDate(r.hardenDate),
+        "Operator": r.operator, "Shift": r.shift, "Start": r.startTime, "Stop": r.stopTime,
+        "Part OK": r.okQty, "Check Lab": r.labQty, "Total Produksi": r.totalQty, "Keterangan": r.keterangan
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Log_Induction");
+      XLSX.writeFile(wb, `LogBook_Hardening_${localToday()}.xlsx`);
+      showToast("File Excel berhasil diunduh!", "success");
+    }
+
+    function exportToPDF() {
+      if (filteredLogs.length === 0) { showToast("Tidak ada data untuk diexport ke PDF", "info"); return; }
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const W = doc.internal.pageSize.getWidth();
+
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text("PT. ADHI CHANDRA JAYA", W / 2, 14, { align: "center" });
+        doc.setFontSize(11);
+        doc.text("LAPORAN LOG BOOK INDUCTION HARDENING", W / 2, 20, { align: "center" });
+        doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')} | Filter Tahun: ${document.getElementById('filterTahun').value}, Bulan: ${document.getElementById('filterBulan').value}`, W / 2, 25, { align: "center" });
+
+        const head = ["No","Tgl Cut","Dia","Part No","Invoice","Bndl","Lot Harden","Tgl Harden","Operator","Shift","Jam","OK","Lab","Total","Ket"];
+        const body = filteredLogs.map((r, i) => [
+          i + 1, formatDisplayDate(r.cuttingDate), r.diameter, r.partNo, r.invoiceNo, r.bundleNo, r.lotNumber,
+          formatDisplayDate(r.hardenDate), r.operator, r.shift, `${r.startTime}-${r.stopTime}`,
+          Number(r.okQty).toLocaleString(), Number(r.labQty).toLocaleString(), Number(r.totalQty).toLocaleString(), r.keterangan || '-'
+        ]);
+
+        doc.autoTable({
+          startY: 28, head: [head], body, theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 1.5, halign: 'left' },
+          headStyles: { fillColor: [0, 122, 255], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+          columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 2: { halign: 'center' }, 5: { halign: 'center' }, 9: { halign: 'center' }, 10: { halign: 'center' }, 11: { halign: 'right' }, 12: { halign: 'right' }, 13: { halign: 'right', fontStyle: 'bold' } },
+          didDrawPage: function (data) {
+            doc.setFontSize(8);
+            doc.text(`Halaman ${data.pageNumber}`, W - 20, doc.internal.pageSize.getHeight() - 8);
+          }
+        });
+
+        let finalY = doc.lastAutoTable.finalY + 12;
+        if (finalY + 25 > doc.internal.pageSize.getHeight()) { doc.addPage(); finalY = 20; }
+        const c1 = W * 0.25, c2 = W * 0.75;
+        doc.setFontSize(8); doc.setFont("helvetica", "bold");
+        doc.text("Dibuat Oleh:", c1, finalY, { align: "center" });
+        doc.text("Disetujui Oleh:", c2, finalY, { align: "center" });
+        doc.line(c1 - 25, finalY + 16, c1 + 25, finalY + 16);
+        doc.text("( Operator Produksi )", c1, finalY + 20, { align: "center" });
+        doc.line(c2 - 25, finalY + 16, c2 + 25, finalY + 16);
+        doc.text("( Kepala Regu IH )", c2, finalY + 20, { align: "center" });
+
+        doc.save(`LogBook_Hardening_${localToday()}.pdf`);
+        showToast("File PDF berhasil diunduh!", "success");
+      } catch (err) {
+        showToast("Gagal membuat PDF: " + err.message, "error");
+      }
+    }
+
+    function openPrintPreview() {
+      document.getElementById('printTimestamp').innerText = new Date().toLocaleString('id-ID');
+      document.getElementById('printFilterDesc').innerText = `Tahun: ${document.getElementById('filterTahun').value}, Bulan: ${document.getElementById('filterBulan').value}`;
+      document.getElementById('printTableBody').innerHTML = filteredLogs.map((r, i) => `
+        <tr>
+          <td class="border border-slate-300 p-1.5 text-center">${i + 1}</td>
+          <td class="border border-slate-300 p-1.5">${formatDisplayDate(r.cuttingDate)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.diameter)}</td>
+          <td class="border border-slate-300 p-1.5 font-bold">${esc(r.partNo)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.invoiceNo)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.bundleNo)}</td>
+          <td class="border border-slate-300 p-1.5 font-mono">${esc(r.lotNumber)}</td>
+          <td class="border border-slate-300 p-1.5">${formatDisplayDate(r.hardenDate)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.operator)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.shift)}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.startTime)}-${esc(r.stopTime)}</td>
+          <td class="border border-slate-300 p-1.5 text-right font-bold">${Number(r.okQty).toLocaleString()}</td>
+          <td class="border border-slate-300 p-1.5 text-right">${Number(r.labQty).toLocaleString()}</td>
+          <td class="border border-slate-300 p-1.5 text-right font-bold">${Number(r.totalQty).toLocaleString()}</td>
+          <td class="border border-slate-300 p-1.5">${esc(r.keterangan) || '-'}</td>
+        </tr>`).join('');
+      document.getElementById('modalPrint').classList.remove('hidden');
+    }
+    function closePrintPreview() { document.getElementById('modalPrint').classList.add('hidden'); }
+  </script>
 </body>
 </html>
