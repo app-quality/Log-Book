@@ -418,7 +418,7 @@
        Isi API_URL dengan URL Web App Google Apps Script (berakhiran /exec).
        Jika dikosongkan, aplikasi berjalan dalam MODE DEMO (data lokal, tidak tersimpan ke Sheet). -->
   <script>
-    const API_URL = ""; // contoh: "https://script.google.com/macros/s/AKfycb.../exec"
+    const API_URL = "https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec"; // contoh: "https://script.google.com/macros/s/AKfycbzWEqnn1JHMFSV79la1o238p6Ly2CeQpytN8-Z_6bHw5YItXKo4XFeRvOazX-tSFxsi4A/exec"
 
     // Shim: meniru google.script.run agar seluruh kode UI tetap sama,
     // tetapi memanggil Apps Script lewat fetch (karena GitHub Pages bukan di dalam Apps Script).
@@ -494,7 +494,7 @@
 
       const badge = document.getElementById('modeBadge');
       if (API_URL) {
-        badge.textContent = 'Terhubung ke Google Sheet';
+        badge.textContent = '';
         badge.className = 'inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-4 bg-emerald-50 text-[#218838]';
       } else {
         badge.textContent = 'Mode Demo (data lokal)';
